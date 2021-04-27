@@ -2,25 +2,37 @@ package netease
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"io/ioutil"
 	"log"
-	"nowPlaying/consts"
-	"nowPlaying/models"
+	"net/http"
+	"nowPlaying/config"
+	"nowPlaying/httpserver"
 )
 
-func Listen(nowPlaying *models.Netease) {
-	if consts.UserNetEaseMusicFilePath == "" {
+//var song *Netease
+var song json.RawMessage
+var cfg *config.NeteaseCfg
+
+func Listen(neteaseCfg *config.NeteaseCfg) {
+	cfg = neteaseCfg
+	if cfg == nil || cfg.Enable == false || cfg.ListenDir == "" {
 		return
 	}
-	updateNeteaseMusic(nowPlaying)
+	http.HandleFunc("/netease/nowPlaying", nowPlaying)
+	http.HandleFunc("/netease/playQueue", playQueue)
+	http.HandleFunc("/netease/song", songUrl)
+
+	updateNeteaseMusic(cfg.ListenDir)
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer watcher.Close()
 
-	err = watcher.Add(consts.UserNetEaseMusicFilePath)
+	err = watcher.Add(cfg.ListenDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,7 +47,7 @@ func Listen(nowPlaying *models.Netease) {
 				return
 			}
 			if event.Op&fsnotify.Write == fsnotify.Write {
-				updateNeteaseMusic(nowPlaying)
+				updateNeteaseMusic(cfg.ListenDir)
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
@@ -46,13 +58,12 @@ func Listen(nowPlaying *models.Netease) {
 	}
 }
 
-func updateNeteaseMusic(nowPlaying *models.Netease) {
-	content, err := ioutil.ReadFile(consts.UserNetEaseMusicFilePath)
-
+func updateNeteaseMusic(dir string) {
+	content, err := ioutil.ReadFile(dir + "history")
 	if err != nil {
 		return
 	}
-	var neteases []models.Netease
+	var neteases []json.RawMessage
 
 	err = json.Unmarshal(content, &neteases)
 
@@ -61,6 +72,35 @@ func updateNeteaseMusic(nowPlaying *models.Netease) {
 	}
 
 	if len(neteases) > 0 {
-		*nowPlaying = neteases[0]
+		fmt.Println(string(neteases[0]))
+
+		song = neteases[0]
 	}
+}
+
+func nowPlaying(writer http.ResponseWriter, _ *http.Request) {
+	//_, err := httpserver.JsonResponse(song, writer)
+	writer.Header().Add("Access-Control-Allow-Origin", "*")
+	writer.Header().Add("Content-Type", "application/json")
+
+	_, _ = writer.Write(song)
+	//if err != nil {
+	//	log.Println(err)
+	//}
+}
+
+func playQueue(writer http.ResponseWriter, _ *http.Request) {
+	writer.Header().Add("Access-Control-Allow-Origin", "*")
+	writer.Header().Add("Content-Type", "application/json")
+
+	content, err := ioutil.ReadFile(cfg.ListenDir + "queue")
+	if err != nil {
+		_, _ = writer.Write(httpserver.FailedResponse(err))
+		return
+	}
+	_, _ = writer.Write(content)
+}
+
+func songUrl (writer http.ResponseWriter, _ *http.Request) {
+//
 }

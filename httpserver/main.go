@@ -4,22 +4,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"nowPlaying/models"
 )
 
-func Start(nowPlaying *models.Netease, addr string) {
+func Start(addr string) {
 	http.HandleFunc("/", func(writer http.ResponseWriter, _ *http.Request) {
-		response, err := json.Marshal(nowPlaying)
-
-		if err != nil {
-			response, _ = json.Marshal(map[string]string{
-				"status":  "error",
-				"message": err.Error(),
-			})
-		}
-		writer.Header().Add("Access-Control-Allow-Origin", "*")
-		writer.Header().Add("Content-Type", "application/json")
-		_, _ = writer.Write(response)
+		_, _ = JsonResponse(map[string]string{
+			"version": "dev version",
+		}, writer)
 	})
 
 	err := http.ListenAndServe(addr, nil)
@@ -27,4 +18,26 @@ func Start(nowPlaying *models.Netease, addr string) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func FailedResponse(err error) []byte {
+	response, _ := json.Marshal(map[string]string{
+		"status":  "error",
+		"message": err.Error(),
+	})
+	return response
+}
+
+func JsonResponse(data interface{}, writer http.ResponseWriter) (int,error) {
+	response, err := json.Marshal(map[string]string{
+		"version": "dev version",
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	writer.Header().Add("Access-Control-Allow-Origin", "*")
+	writer.Header().Add("Content-Type", "application/json")
+
+	return writer.Write(response)
 }

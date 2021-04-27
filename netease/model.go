@@ -1,4 +1,8 @@
-package models
+package netease
+
+//type Array struct {
+//	json.RawMessage
+//}
 
 type Netease struct {
 	Track struct {

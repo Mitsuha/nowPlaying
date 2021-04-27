@@ -9,7 +9,7 @@ import (
 )
 
 func registerService() {
-	if *flagServiceInstall {
+	if config.Shell.Install {
 		ap, err := nos.AppPath()
 		if err != nil {
 			log.Fatalln(err)
@@ -23,7 +23,7 @@ func registerService() {
 		os.Exit(0)
 	}
 
-	if *flagServiceUninstall {
+	if config.Shell.Uninstall {
 		err := service.Uninstall(config.ServiceName)
 
 		if err != nil {
@@ -32,8 +32,8 @@ func registerService() {
 		os.Exit(0)
 	}
 
-	if *flagServiceStop {
-		err := service.Stop(config.ServiceName)
+	if config.Shell.Start {
+		err := service.Start(config.ServiceName)
 
 		if err != nil {
 			log.Fatalln(err)
@@ -41,8 +41,8 @@ func registerService() {
 		os.Exit(0)
 	}
 
-	if *flagServiceStart {
-		err := service.Start(config.ServiceName)
+	if config.Shell.Stop {
+		err := service.Stop(config.ServiceName)
 
 		if err != nil {
 			log.Fatalln(err)

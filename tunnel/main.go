@@ -1,44 +1,32 @@
 package tunnel
 
 import (
-	"errors"
 	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"net"
+	"nowPlaying/config"
 	subSsh "nowPlaying/tunnel/ssh"
 	"strings"
 )
 
-func Ssh(server, password, local, remote string) (*subSsh.SSH, error) {
-	host, err := parseServerHost(server)
+//func Ssh(user, host, password, local, remote string) (*subSsh.SSH, error) {
+func Ssh(tunCfg *config.TunnelCfg) (*subSsh.SSH, error) {
+	cfg, err := makeSshConfig(tunCfg.User,tunCfg.Password)
 
 	if err != nil {
 		return nil, err
 	}
 
-	cfg, err := makeSshConfig(host[0],password)
-
-	if err != nil {
-		return nil, err
+	var host = tunCfg.Host
+	if ! strings.Contains(host, ":") {
+		host = host + ":22"
 	}
-
 	return &subSsh.SSH{
 		Config:     *cfg,
-		ConnAddr:  host[1],
-		LocalAddr:  local,
-		RemoteAddr: remote,
+		ConnAddr:  host,
+		LocalAddr:  config.App.Listen,
+		RemoteAddr: "0.0.0.0:" + tunCfg.Port,
 	}, nil
-}
-
-func parseServerHost(server string) ([]string, error) {
-	if ! strings.Contains(server, "@") {
-		return nil, errors.New("can not parser server name")
-	}
-	if ! strings.Contains(server, ":") {
-		server += ":22"
-	}
-
-	return strings.SplitN(server, "@", 2), nil
 }
 
 func parsePrivateKey(keyPath string) (ssh.Signer, error) {

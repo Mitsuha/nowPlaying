@@ -1,52 +1,64 @@
 package config
 
 import (
-	"flag"
-	"fmt"
 	"gopkg.in/ini.v1"
 	"log"
-	"nowPlaying/common"
 	nos "nowPlaying/os"
 	"os"
 )
 
+//var Config *ini.File
+//
+//var LocalAddr string
+//var RemoteServer string
+//var RemoteListen string
+//var flagConfigPath = flag.String("f", "", "ini file")
+//var UserNetEaseMusicFilePath = ""
+
+var App *AppCfg
+var Shell *ShellCfg
+var Netease *NeteaseCfg
+var Tunnel *TunnelCfg
 var Config *ini.File
 
-var LocalAddr string
-var RemoteServer string
-var RemoteListen string
-var flagConfigPath = flag.String("f", "", "ini file")
+func Initialization() {
+	Shell = newShell()
+	var iniPath string
 
-func InitConfig() {
-	//fmt.Println("ffff",*flagConfigPath)
-	log.Println(nos.HomeDirectory())
-	var iniPath = nos.HomeDirectory() + "\\.nowPlaying"
-
-	var err error
-	if ! common.FileExists(iniPath) {
-		err = createConfigFile(iniPath)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		err = common.OpenFilExplorer(iniPath)
-		if err != nil {
-			fmt.Println(err)
-			fmt.Println("First running, please edit your configuration file on this path " + iniPath)
-		}
-		fmt.Println("First running, please edit your configuration file")
-		os.Exit(1)
+	if Shell.IniPath == "" {
+		iniPath = nos.HomeDirectory() + "\\.nowPlaying\\config.ini"
 	}
 
-	Config, err = ini.Load(iniPath + "\\config.ini")
-
+	Config, err := ini.Load(iniPath)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	LocalAddr = Config.Section("web").Key("addr").String()
-	RemoteServer = Config.Section("tunnel").Key("server").String()
-	RemoteListen = Config.Section("tunnel").Key("listen").String()
+	App = &AppCfg{
+		Listen:  Config.Section("app").Key("listen").String(),
+		IniPath: Shell.IniPath,
+		HomeDir: nos.HomeDirectory(),
+	}
+
+	enableTunnel, _ := Config.Section("netease").Key("enable").Bool()
+	Tunnel = &TunnelCfg{
+		Enable:  enableTunnel,
+		Type:    Config.Section("tunnel").Key("type").String(),
+		User:    Config.Section("tunnel").Key("user").String(),
+		Host:    Config.Section("tunnel").Key("host").String(),
+		Port:    Config.Section("tunnel").Key("port").String(),
+		Forward: App.Listen,
+	}
+
+	enableNetease, _ := Config.Section("netease").Key("enable").Bool()
+	neteaseListenDir := Config.Section("netease").Key("ListenDir").String()
+
+	if neteaseListenDir == "" {neteaseListenDir = App.HomeDir + WindowsNetEaseMusicFilePath}
+	Netease = &NeteaseCfg{
+		Enable: enableNetease ,
+		ListenDir: neteaseListenDir,
+	}
+
 }
 
 func createConfigFile(iniPath string) error {
