@@ -4,34 +4,32 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"nowPlaying/config"
 )
 
-func Start(addr string) {
+func Start() {
 	http.HandleFunc("/", func(writer http.ResponseWriter, _ *http.Request) {
 		_, _ = JsonResponse(map[string]string{
 			"version": "dev version",
 		}, writer)
 	})
 
-	err := http.ListenAndServe(addr, nil)
+	err := http.ListenAndServe(config.App.Listen, nil)
 
 	if err != nil {
 		log.Fatalln(err)
 	}
 }
 
-func FailedResponse(err error) []byte {
-	response, _ := json.Marshal(map[string]string{
+func FailedResponse(err error, writer http.ResponseWriter) {
+	_, _ = JsonResponse(map[string]string{
 		"status":  "error",
 		"message": err.Error(),
-	})
-	return response
+	}, writer)
 }
 
 func JsonResponse(data interface{}, writer http.ResponseWriter) (int,error) {
-	response, err := json.Marshal(map[string]string{
-		"version": "dev version",
-	})
+	response, err := json.Marshal(data)
 	if err != nil {
 		return 0, err
 	}

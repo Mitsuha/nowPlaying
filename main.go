@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"nowPlaying/config"
 	"nowPlaying/httpserver"
@@ -12,9 +11,12 @@ import (
 )
 
 func init() {
+	//fmt.Println(time.Now().Format("2006-01-02T15:04:05Z07:00"))
+	//os.Exit(1)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	config.Initialization()
 
-	logf, err := os.OpenFile("C:\\Users\\hhx\\Desktop\\nowPlaying.log", os.O_WRONLY, 0)
+	logf, err := os.OpenFile(config.Shell.LogPath, os.O_WRONLY, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -22,33 +24,28 @@ func init() {
 		log.SetOutput(logf)
 	}
 
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
 func main() {
 	registerService()
 
 	if service.InServiceModel() {
-		err := service.RunAsService("nowPlaying", app, func() {})
+		err := service.RunAsService(config.ServiceName, start, stop)
 
 		if err != nil {
 			log.Fatalln(err)
 		}
 	}else{
-		app()
+		start()
 	}
 }
 
-func app() {
-	go netease.Listen(config.Netease)
-	//time.Sleep(1*time.Second)
-	go httpserver.Start(config.App.Listen)
+func start() {
+	go netease.Listen()
+	go httpserver.Start()
 
 	if config.Tunnel.Enable {
 		if config.Tunnel.Type == "ssh" {
-			fmt.Println(config.Tunnel)
-			//cfg := config.Tunnel
-			//sshTunnel, err := tunnel.Ssh(cfg.User, cfg.Host, cfg.Password, config.App.Listen, "0.0.0.0:" + cfg.Port)
 			sshTunnel, err := tunnel.Ssh(config.Tunnel)
 			if err != nil {
 				log.Fatalln(err)
@@ -62,4 +59,8 @@ func app() {
 	}
 
 	select {}
+}
+
+func stop() {
+
 }

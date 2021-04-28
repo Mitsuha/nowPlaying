@@ -8,9 +8,9 @@ import (
 )
 var err = errors.New("unsupported operating system" + runtime.GOOS)
 
-func Install(path, name, desc string) error {
+func Install(path, name, desc string, param ...string) error {
 	if runtime.GOOS == "windows" {
-		return windows.Install(path, name, desc)
+		return windows.Install(path, name, desc, param...)
 	}
 
 	return err

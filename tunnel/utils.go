@@ -1,9 +1,9 @@
 package tunnel
 
 import (
-	"nowPlaying/os"
+	"nowPlaying/config"
 )
 
 func privateKetPath() string {
-	return os.HomeDirectory() + "\\.ssh\\id_rsa"
+	return config.App.HomeDir + "\\.ssh\\id_rsa"
 }

@@ -15,7 +15,11 @@ func registerService() {
 			log.Fatalln(err)
 		}
 
-		err = service.Install(ap, config.ServiceName, config.ServiceDescription)
+		//err = service.Install(ap, config.ServiceName, config.ServiceDescription, fmt.Sprintf(
+		//	"-f %s -h %s",
+		//	config.App.IniPath, config.App.HomeDir,
+		//	))
+		err = service.Install(ap, config.ServiceName, config.ServiceDescription, "-f", config.App.IniPath, "-h", config.App.HomeDir)
 
 		if err != nil {
 			log.Fatalln(err)
